@@ -1,7 +1,7 @@
 from torch import Tensor
 from torch import nn
 
-from utils import Rearrange
+from .utils import Rearrange
 
 class Pointwise_Conv(nn.Module):
     # 1D convolution with kernel_size=1
