@@ -5,6 +5,7 @@ import hydra
 import wandb
 from omegaconf import DictConfig
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from model.conformer import Conformer
 from data.dataset import LibriSpeechDataModule, CharTextTransform
@@ -95,7 +96,7 @@ class ConformerLightningModule(pl.LightningModule):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         return optimizer
 
-@hydra.main(config_path="configs", config_name="config")
+@hydra.main(config_path="configs", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
     data_module = LibriSpeechDataModule(
@@ -115,11 +116,20 @@ def main(cfg: DictConfig):
 
     wandb_logger = WandbLogger(project="conformer", name="conformer-run")
 
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_loss",
+        dirpath="checkpoints/",
+        filename="conformer-{epoch:02d}-{val_loss:.2f}",
+        save_top_k=1,
+        mode="min"
+    )
+
     trainer = pl.Trainer(
         max_epochs=cfg.train.epochs,
         accelerator=cfg.train.accelerator,
         precision=cfg.train.precision,
-        logger=wandb_logger
+        logger=wandb_logger,
+        callbacks=[checkpoint_callback]
     )
 
     trainer.fit(model_module, data_module)
