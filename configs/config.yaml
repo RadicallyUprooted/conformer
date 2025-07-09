@@ -1,7 +1,7 @@
 defaults:
+  - _self_
   - model: conformer
   - data: librispeech
-  - __self__
 
 train:
   batch_size: 8

@@ -2,4 +2,4 @@
 __pycache__
 outputs/
 data/librispeech
-poetry.lock
+wandb
