@@ -10,10 +10,12 @@ class RelativePositionalEncoding(nn.Module):
     def __init__(
         self,
         d_model: int,
+        max_relative_position: int = 30
     ):
         super(RelativePositionalEncoding, self).__init__()
 
         self.d_model = d_model
+        self.max_relative_position = max_relative_position
 
     def forward(self, q: Tensor) -> Tensor:
         
@@ -24,12 +26,12 @@ class RelativePositionalEncoding(nn.Module):
 
         distance_mat = range_mat - rearrange(range_vec, 'i -> i 1')
         
-        distance_mat_clipped = torch.clamp(distance_mat, -30, 30) # TODO: make clip value a parameter
+        distance_mat_clipped = torch.clamp(distance_mat, -self.max_relative_position, self.max_relative_position)
         
-        final_mat = distance_mat_clipped + 30 # TODO: make clip value a parameter
+        final_mat = distance_mat_clipped + self.max_relative_position
 
-        encodings = torch.zeros(2 * 30 + 1, self.d_model)    # (x_length, d_model)
-        positions = torch.arange(0, (2 * 30 + 1)).unsqueeze(1)      # (x_length, 1)
+        encodings = torch.zeros(2 * self.max_relative_position + 1, self.d_model)       # (x_length, d_model)
+        positions = torch.arange(0, (2 * self.max_relative_position + 1)).unsqueeze(1)  # (x_length, 1)
 
         div_term = torch.exp(
             torch.arange(0, self.d_model, 2) * -(math.log(10000.0) / self.d_model)
