@@ -1,8 +1,8 @@
 from torch import nn, Tensor
 
-from modules.feed_forward import FeedForward
-from modules.attention import Attention
-from modules.convolution import Convolution
+from .modules.feed_forward import FeedForward
+from .modules.attention import Attention
+from .modules.convolution import Convolution
 
 class ConformerBlock(nn.Module):
 
@@ -23,11 +23,11 @@ class ConformerBlock(nn.Module):
 
     def forward(self, inputs: Tensor) -> Tensor:
 
-        inputs += 0.5 * self.ff1(inputs)
-        inputs += self.attn(inputs)
-        inputs += self.conv(inputs)
-        inputs += 0.5 * self.ff2(inputs)
+        x = inputs + 0.5 * self.ff1(inputs)
+        x = x + self.attn(x)
+        x = x + self.conv(x)
+        x = x + 0.5 * self.ff2(x)
 
-        outputs = self.layer_norm(inputs)
+        outputs = self.layer_norm(x)
 
         return outputs

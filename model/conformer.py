@@ -1,6 +1,6 @@
 from torch import nn, Tensor
 
-from conformer_encoder import Encoder
+from .conformer_encoder import Encoder
 
 class Conformer(nn.Module):
 

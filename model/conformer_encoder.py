@@ -1,8 +1,8 @@
 import torch
 from torch import nn, Tensor
 
-from conformer_block import ConformerBlock
-from modules.subsampling import Subsampling
+from .conformer_block import ConformerBlock
+from .modules.subsampling import Subsampling
 
 class Encoder(nn.Module):
 

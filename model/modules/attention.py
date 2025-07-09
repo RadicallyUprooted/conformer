@@ -79,13 +79,14 @@ class MultiHeadSelfAttention(nn.Module):
         v = rearrange(self.v_proj(inputs), 'b t (h d) -> b h t d', h=self.attention_heads)
         
         pos = self.pos_proj(relative_positional_embeddings)
+        pos = rearrange(pos, 'b t1 t2 (h d) -> b h t1 t2 d', h=self.attention_heads)
         
         q_with_bias_u = q + self.u_bias
         q_with_bias_v = q + self.v_bias
 
         qk_score = einsum(q_with_bias_u, k, 'b h t1 d, b h t2 d -> b h t1 t2')
         
-        pos_score = einsum(q_with_bias_v, pos, 'b h t1 d, b t1 t2 d -> b h t1 t2')
+        pos_score = einsum(q_with_bias_v, pos, 'b h t1 d, b h t1 t2 d -> b h t1 t2')
 
         scores = (qk_score + pos_score) / math.sqrt(self.heads_dim)
 

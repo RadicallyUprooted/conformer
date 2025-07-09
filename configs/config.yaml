@@ -1,0 +1,11 @@
+defaults:
+  - model: conformer
+  - data: librispeech
+
+train:
+  batch_size: 8
+  epochs: 10
+  learning_rate: 1e-4
+  accelerator: 'auto'
+  precision: 'bf16-mixed'
+
