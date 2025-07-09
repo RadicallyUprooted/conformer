@@ -8,26 +8,26 @@ class ConformerBlock(nn.Module):
 
     def __init__(
         self,
-        encoder_dim: int,
-        attention_heads: int,
-        depthwise_conv_kernel_size: int,
-        dropout_p: float,
+        d_model: int,
+        n_heads: int,
+        conv_kernel_size: int,
+        dropout: float,
     ):
         super().__init__()
 
-        self.ff1 = FeedForward(encoder_dim, dropout_p)
-        self.attn = Attention(encoder_dim, attention_heads, dropout_p)
-        self.conv = Convolution(encoder_dim, depthwise_conv_kernel_size, dropout_p)
-        self.ff2 = FeedForward(encoder_dim, dropout_p)
-        self.layer_norm = nn.LayerNorm(encoder_dim)
+        self.ff1 = FeedForward(d_model, dropout)
+        self.attn = Attention(d_model, n_heads, dropout)
+        self.conv = Convolution(d_model, conv_kernel_size, dropout)
+        self.ff2 = FeedForward(d_model, dropout)
+        self.layer_norm = nn.LayerNorm(d_model)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, inputs: Tensor) -> Tensor:
 
-        x += 0.5 * self.ff1(x)
-        x += self.attn(x)
-        x += self.conv(x)
-        x += 0.5 * self.ff2(x)
+        inputs += 0.5 * self.ff1(inputs)
+        inputs += self.attn(inputs)
+        inputs += self.conv(inputs)
+        inputs += 0.5 * self.ff2(inputs)
 
-        out = self.layer_norm(x)
+        outputs = self.layer_norm(inputs)
 
-        return out
+        return outputs

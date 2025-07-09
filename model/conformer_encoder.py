@@ -1,3 +1,4 @@
+import torch
 from torch import nn, Tensor
 
 from conformer_block import ConformerBlock
@@ -7,37 +8,51 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        input_dim: int,
-        encoder_dim: int,
-        num_layers: int,
-        attention_heads: int,
-        depthwise_conv_kernel_size: int,
-        dropout_p: float,
+        n_mels: int,
+        d_model: int,
+        n_layers: int,
+        n_heads: int,
+        conv_kernel_size: int,
+        dropout: float,
     ):
         super().__init__()
 
-        self.subsample = Subsampling(out_channels=encoder_dim)
+        self.subsample = Subsampling(in_channels=1, d_model=d_model)
+        
+        subsample_output_dim = self._get_subsample_output_dim(n_mels)
+
         self.proj = nn.Sequential(
-            nn.Linear(in_features=encoder_dim * (((input_dim - 1) // 2 - 1) // 2), out_features=encoder_dim),
-            nn.Dropout(p=dropout_p)
+            nn.Linear(in_features=subsample_output_dim, out_features=d_model),
+            nn.Dropout(p=dropout)
         )
         self.blocks = nn.ModuleList(
             [
             ConformerBlock(
-                encoder_dim=encoder_dim,
-                attention_heads=attention_heads,
-                depthwise_conv_kernel_size=depthwise_conv_kernel_size,
-                dropout_p=dropout_p,
-            ) for _ in range(num_layers)
+                d_model=d_model,
+                n_heads=n_heads,
+                conv_kernel_size=conv_kernel_size,
+                dropout=dropout,
+            ) for _ in range(n_layers)
             ]
         )
 
-    def forward(self, x: Tensor, x_lengths: Tensor) -> Tensor:
+    def _get_subsample_output_dim(self, n_mels):
+        # Create a dummy input tensor to pass through the subsampling layer
+        dummy_input = torch.randn(1, 100, n_mels)  # (B, L, D)
+        dummy_lengths = torch.tensor([100])
+        
+        # Pass the dummy input through the subsampling layer
+        with torch.no_grad():
+            output, _ = self.subsample(dummy_input, dummy_lengths)
+        
+        return output.shape[-1]
 
-        out, out_len = self.subsample(x, x_lengths)
-        out = self.proj(out)
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tensor:
+
+        outputs, output_lengths = self.subsample(inputs, input_lengths)
+        outputs = self.proj(outputs)
 
         for block in self.blocks:
-            out = block(out)
+            outputs = block(outputs)
 
-        return out, out_len
+        return outputs, output_lengths

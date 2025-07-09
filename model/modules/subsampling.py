@@ -6,7 +6,8 @@ class Subsampling(nn.Module):
 
     def __init__(
         self,
-        out_channels: int,
+        in_channels: int,
+        d_model: int,
         kernel_size: int = 3,
         stride: int = 2,
     ):
@@ -14,28 +15,30 @@ class Subsampling(nn.Module):
 
         self.module = nn.Sequential(
             nn.Conv2d(
-                in_channels=1,
-                out_channels=out_channels,
+                in_channels=in_channels,
+                out_channels=d_model,
                 kernel_size=kernel_size,
                 stride=stride
             ),
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=out_channels,
-                out_channels=out_channels,
+                in_channels=d_model,
+                out_channels=d_model,
                 kernel_size=kernel_size,
                 stride=stride,
             ),
             nn.ReLU(),
         )
 
-    def forward(self, x: Tensor, x_lengths: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> tuple[Tensor, Tensor]:
         
-        x = rearrange(x, 'b l d -> b 1 l d')
+        inputs = rearrange(inputs, 'b l d -> b 1 l d')
 
-        out = self.module(x)
-        out = rearrange(out, 'b c l d -> b l (c d)')
+        outputs = self.module(inputs)
+        outputs = rearrange(outputs, 'b c l d -> b l (c d)')
 
-        out_lengths = x_lengths // 4 - 1
+        output_lengths = torch.floor((input_lengths - self.module[0].kernel_size[0]) / self.module[0].stride[0] + 1)
+        output_lengths = torch.floor((output_lengths - self.module[2].kernel_size[0]) / self.module[2].stride[0] + 1)
+        output_lengths = output_lengths.to(torch.int64)
 
-        return out, out_lengths
+        return outputs, output_lengths

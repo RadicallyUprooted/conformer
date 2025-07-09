@@ -55,36 +55,36 @@ class Convolution(nn.Module):
 
     def __init__(
         self, 
-        in_channels: int,
-        kernel_size: int = 31,
-        dropout_p: float = 0.1,
+        d_model: int,
+        conv_kernel_size: int = 31,
+        dropout: float = 0.1,
     ):
         super(Convolution, self).__init__()
 
         self.module = nn.Sequential(
-            nn.LayerNorm(in_channels),
+            nn.LayerNorm(d_model),
             Rearrange(pattern='b l d -> b d l'),
             Pointwise_Conv(
-                in_channels=in_channels,
-                out_channels=2*in_channels,
+                in_channels=d_model,
+                out_channels=2*d_model,
             ),
             nn.GLU(dim=1),
             Depthwise_Conv(
-                in_channels=in_channels,
-                out_channels=in_channels,
-                kernel_size=kernel_size,
-                padding=(kernel_size - 1) // 2,
+                in_channels=d_model,
+                out_channels=d_model,
+                kernel_size=conv_kernel_size,
+                padding=(conv_kernel_size - 1) // 2,
             ),
-            nn.BatchNorm1d(in_channels),
+            nn.BatchNorm1d(d_model),
             nn.SiLU(),
             Pointwise_Conv(
-                in_channels=in_channels,
-                out_channels=in_channels,
+                in_channels=d_model,
+                out_channels=d_model,
             ),
-            nn.Dropout(p=dropout_p),
+            nn.Dropout(p=dropout),
             Rearrange(pattern='b d l -> b l d'),
         )
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, inputs: Tensor) -> Tensor:
 
-        return self.module(x)    
+        return self.module(inputs)    

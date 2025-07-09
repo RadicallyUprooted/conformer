@@ -5,26 +5,26 @@ class FeedForward(nn.Module):
 
     def __init__(
         self,
-        encoder_dim: int,
-        dropout_p: float = 0.1,
+        d_model: int,
+        dropout: float = 0.1,
     ):
         super(FeedForward, self).__init__()
 
         self.module = nn.Sequential(
-            nn.LayerNorm(encoder_dim),
+            nn.LayerNorm(d_model),
             nn.Linear(
-                in_features=encoder_dim,
-                out_features=encoder_dim * 4,
+                in_features=d_model,
+                out_features=d_model * 4,
             ),
             nn.SiLU(),
-            nn.Dropout(p=dropout_p),
+            nn.Dropout(p=dropout),
             nn.Linear(
-                in_features=encoder_dim * 4,
-                out_features=encoder_dim,
+                in_features=d_model * 4,
+                out_features=d_model,
             ),
-            nn.Dropout(p=dropout_p),
+            nn.Dropout(p=dropout),
         )
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, inputs: Tensor) -> Tensor:
 
-        return self.module(x)
+        return self.module(inputs)
