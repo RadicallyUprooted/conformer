@@ -8,28 +8,9 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torchmetrics import CharErrorRate, WordErrorRate
 from model.conformer import Conformer
-from data.dataset import LibriSpeechDataModule, CharTextTransform
+from data.dataset import LibriSpeechDataModule
+from text_processor.processor import CharTextTransform, GreedyCTCDecoder
 import gc
-
-class GreedyCTCDecoder(torch.nn.Module):
-    def __init__(self, labels, blank=0):
-        super().__init__()
-        self.labels = labels
-        self.blank = blank
-
-    def forward(self, emission: torch.Tensor) -> str:
-        """Given a sequence emission over labels, get the best path string
-        Args:
-          emission (Tensor): Logit tensors. Shape `[num_seq, num_label]`.
-
-        Returns:
-          str: The resulting transcript
-        """
-        indices = torch.argmax(emission, dim=-1)  # [num_seq,]
-        indices = torch.unique_consecutive(indices, dim=-1)
-        indices = [i for i in indices if i != self.blank]
-        return "".join([self.labels[i.item()] for i in indices])
-
 
 class ConformerLightningModule(pl.LightningModule):
     """
@@ -149,11 +130,9 @@ def main(cfg: DictConfig):
     wandb_logger = WandbLogger(project="conformer", name="conformer-run")
 
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_loss",
         dirpath="checkpoints/",
-        filename="conformer-{epoch:02d}-{val_loss:.2f}",
-        save_top_k=1,
-        mode="min"
+        filename="conformer-{epoch:02d}",
+        every_n_epochs=10,
     )
 
     trainer = pl.Trainer(

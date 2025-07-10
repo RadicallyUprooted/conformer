@@ -3,26 +3,8 @@ import torch
 import torch.nn as nn
 import torchaudio
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader, Dataset
-
-class CharTextTransform:
-    """
-    A transform to convert text to a sequence of integers and back.
-    """
-    def __init__(self):
-        self.char_map = {
-            "'": 0, ' ': 1, 'a': 2, 'b': 3, 'c': 4, 'd': 5, 'e': 6, 'f': 7, 'g': 8,
-            'h': 9, 'i': 10, 'j': 11, 'k': 12, 'l': 13, 'm': 14, 'n': 15, 'o': 16,
-            'p': 17, 'q': 18, 'r': 19, 's': 20, 't': 21, 'u': 22, 'v': 23, 'w': 24,
-            'x': 25, 'y': 26, 'z': 27
-        }
-        self.index_map = {v: k for k, v in self.char_map.items()}
-
-    def text_to_int(self, text):
-        return [self.char_map[c] for c in text.lower()]
-
-    def int_to_text(self, labels):
-        return "".join([self.index_map[i] for i in labels])
+from torch.utils.data import DataLoader
+from text_processor.processor import CharTextTransform
 
 class LibriSpeechDataModule(pl.LightningDataModule):
     """
@@ -54,8 +36,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
             num_workers=0,
-            pin_memory=True,
-            #persistent_workers=False
+            pin_memory=True
         )
 
     def val_dataloader(self):
@@ -64,8 +45,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
             num_workers=0,
-            pin_memory=True,
-            #persistent_workers=False
+            pin_memory=True
         )
 
     def collate_fn(self, batch):
