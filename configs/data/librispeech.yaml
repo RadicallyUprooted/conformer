@@ -1,6 +1,6 @@
 name: librispeech
 path: ${hydra:runtime.cwd}/data/librispeech
-train_url: dev-clean
+train_url: train-clean-100
 val_url: test-clean
 n_mels: 80
-vocab_size: 29 # 26 letters + apostrophe + space + blank
+vocab_size: 29
