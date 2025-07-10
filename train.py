@@ -6,10 +6,10 @@ import wandb
 from omegaconf import DictConfig
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-
+from torchmetrics import CharErrorRate, WordErrorRate
 from model.conformer import Conformer
 from data.dataset import LibriSpeechDataModule, CharTextTransform
-
+import gc
 
 class GreedyCTCDecoder(torch.nn.Module):
     def __init__(self, labels, blank=0):
@@ -53,6 +53,8 @@ class ConformerLightningModule(pl.LightningModule):
         self.learning_rate = train_cfg.learning_rate
         self.text_transform = CharTextTransform()
         self.decoder = GreedyCTCDecoder(self.text_transform.index_map, blank=data_cfg.vocab_size - 1)
+        self.cer = CharErrorRate()
+        self.wer = WordErrorRate()
 
     def forward(self, inputs, input_lengths):
         return self.model(inputs, input_lengths)
@@ -65,7 +67,11 @@ class ConformerLightningModule(pl.LightningModule):
         
         loss = self.criterion(log_probs, targets, output_lengths, target_lengths)
         
-        self.log('train_loss', loss)
+        self.log('train_loss', loss.detach(), on_step=True, prog_bar=True, logger=True)
+
+        gc.collect()
+        torch.cuda.empty_cache()
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -76,7 +82,19 @@ class ConformerLightningModule(pl.LightningModule):
         
         loss = self.criterion(log_probs, targets, output_lengths, target_lengths)
         
-        self.log('val_loss', loss)
+        self.log('val_loss', loss.detach(), on_epoch=True, prog_bar=True, logger=True)
+
+        decoded_preds = []
+        decoded_targets = []
+        for i in range(outputs.size(0)):
+            pred = self.decoder(outputs[i][:output_lengths[i]].cpu())
+            decoded_preds.append(pred)
+            
+            target = self.text_transform.int_to_text(targets[i][:target_lengths[i]].cpu().numpy())
+            decoded_targets.append(target)
+
+        self.wer.update(decoded_preds, decoded_targets)
+        self.cer.update(decoded_preds, decoded_targets)
 
         if batch_idx == 0:
             waveform = waveforms[0].cpu()
@@ -91,6 +109,17 @@ class ConformerLightningModule(pl.LightningModule):
             })
 
         return loss
+    
+    def on_validation_epoch_end(self):
+        # Compute and log average WER and CER
+        avg_wer = self.wer.compute()
+        avg_cer = self.cer.compute()
+        
+        self.log('val_wer', avg_wer, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_cer', avg_cer, on_epoch=True, prog_bar=True, logger=True)
+        
+        self.wer.reset()
+        self.cer.reset()
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
@@ -98,6 +127,9 @@ class ConformerLightningModule(pl.LightningModule):
 
 @hydra.main(config_path="configs", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+    gc.collect()
+    torch.cuda.empty_cache()
 
     data_module = LibriSpeechDataModule(
         path=cfg.data.path,
