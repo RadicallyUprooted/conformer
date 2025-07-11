@@ -37,18 +37,20 @@ class LibriSpeechDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
+            shuffle=True,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn_train,
-            num_workers=0,
+            num_workers=4,
             pin_memory=True
         )
 
     def val_dataloader(self):
         return DataLoader(
             self.val_dataset,
+            shuffle=True,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn_val,
-            num_workers=0,
+            num_workers=4,
             pin_memory=True
         )
 
