@@ -2,9 +2,11 @@ defaults:
   - _self_
   - model: conformer
   - data: librispeech
+  - optimizer: adamw
+  - decoder: beam_search
 
 train:
-  batch_size: 128
+  batch_size: 64
   epochs: 50
   learning_rate: 1e-4
   accelerator: 'auto'
