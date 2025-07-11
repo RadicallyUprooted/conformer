@@ -3,10 +3,11 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import hydra
 import wandb
+import random
 from omegaconf import DictConfig
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torchmetrics import CharErrorRate, WordErrorRate
+from torchmetrics.text import CharErrorRate, WordErrorRate
 from model.conformer import Conformer
 from data.dataset import LibriSpeechDataModule
 from text_processor.processor import CharTextTransform, GreedyCTCDecoder
@@ -78,10 +79,13 @@ class ConformerLightningModule(pl.LightningModule):
         self.cer.update(decoded_preds, decoded_targets)
 
         if batch_idx == 0:
-            waveform = waveforms[0].cpu()
-            ground_truth_text = self.text_transform.int_to_text(targets[0][:target_lengths[0]].cpu().numpy())
+            batch_size = outputs.size(0)
+            random_idx = random.randint(0, batch_size - 1)
+
+            waveform = waveforms[random_idx].cpu()
+            ground_truth_text = self.text_transform.int_to_text(targets[random_idx][:target_lengths[random_idx]].cpu().numpy())
             
-            pred_text = self.decoder(outputs[0][:output_lengths[0]].cpu())
+            pred_text = self.decoder(outputs[random_idx][:output_lengths[random_idx]].cpu())
 
             self.logger.experiment.log({
                 "examples": [
@@ -143,7 +147,7 @@ def main(cfg: DictConfig):
         callbacks=[checkpoint_callback]
     )
 
-    trainer.fit(model_module, data_module)
+    trainer.fit(model_module, data_module, ckpt_path=cfg.train.checkpoint)
 
 if __name__ == '__main__':
     main()
