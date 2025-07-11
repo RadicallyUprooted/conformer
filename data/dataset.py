@@ -21,8 +21,8 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         self.text_transform = CharTextTransform()
         self.mel_transform = torchaudio.transforms.MelSpectrogram(n_mels=self.n_mels)
         self.spectrogram_augment = nn.Sequential(
-            torchaudio.transforms.TimeMasking(time_mask_param=80),
-            torchaudio.transforms.FrequencyMasking(freq_mask_param=80)
+            torchaudio.transforms.TimeMasking(time_mask_param=30),
+            torchaudio.transforms.FrequencyMasking(freq_mask_param=15)
         )
 
     def prepare_data(self):
