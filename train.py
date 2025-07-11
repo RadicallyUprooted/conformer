@@ -11,7 +11,6 @@ from torchmetrics.text import CharErrorRate, WordErrorRate
 from model.conformer import Conformer
 from data.dataset import LibriSpeechDataModule
 from text_processor.processor import CharTextTransform, GreedyCTCDecoder
-import gc
 
 class ConformerLightningModule(pl.LightningModule):
     """
@@ -49,11 +48,8 @@ class ConformerLightningModule(pl.LightningModule):
         
         loss = self.criterion(log_probs, targets, output_lengths, target_lengths)
         
-        self.log('train_loss', loss.detach(), on_step=True, prog_bar=True, logger=True)
-
-        gc.collect()
-        torch.cuda.empty_cache()
-        
+        self.log('train_loss', loss, on_step=True, prog_bar=True, logger=True, sync_dist=True)
+    
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -64,7 +60,7 @@ class ConformerLightningModule(pl.LightningModule):
         
         loss = self.criterion(log_probs, targets, output_lengths, target_lengths)
         
-        self.log('val_loss', loss.detach(), on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
         decoded_preds = []
         decoded_targets = []
@@ -100,8 +96,8 @@ class ConformerLightningModule(pl.LightningModule):
         avg_wer = self.wer.compute()
         avg_cer = self.cer.compute()
         
-        self.log('val_wer', avg_wer, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_cer', avg_cer, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_wer', avg_wer, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_cer', avg_cer, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         
         self.wer.reset()
         self.cer.reset()
@@ -113,16 +109,16 @@ class ConformerLightningModule(pl.LightningModule):
 @hydra.main(config_path="configs", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
-    gc.collect()
-    torch.cuda.empty_cache()
-
     data_module = LibriSpeechDataModule(
         path=cfg.data.path,
         train_url=cfg.data.train_url,
         val_url=cfg.data.val_url,
         batch_size=cfg.train.batch_size, 
         n_mels=cfg.data.n_mels, 
-        vocab_size=cfg.data.vocab_size
+        vocab_size=cfg.data.vocab_size,
+        time_mask_param=cfg.data.time_mask_param,
+        freq_mask_param=cfg.data.freq_mask_param,
+        num_workers=cfg.data.num_workers,
     )
 
     model_module = ConformerLightningModule(
@@ -136,7 +132,7 @@ def main(cfg: DictConfig):
     checkpoint_callback = ModelCheckpoint(
         dirpath="checkpoints/",
         filename="conformer-{epoch:02d}",
-        every_n_epochs=10,
+        every_n_epochs=cfg.train.epochs,
     )
 
     trainer = pl.Trainer(
