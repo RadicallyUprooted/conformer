@@ -6,11 +6,23 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from text_processor.processor import CharTextTransform
 
+from typing import Union
+from pathlib import Path
+
 class LibriSpeechDataModule(pl.LightningDataModule):
     """
     A LightningDataModule for the LibriSpeech dataset.
     """
-    def __init__(self, path, train_url, val_url, batch_size, n_mels, vocab_size):
+    def __init__(self,
+                path: Union[str, Path],
+                train_url: str,
+                val_url: str,
+                batch_size: int,
+                n_mels: int,
+                vocab_size: int,
+                time_mask_param: int,
+                freq_mask_param: int,
+                num_workers: int):
         super().__init__()
         self.path = path
         self.train_url = train_url
@@ -18,11 +30,14 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.n_mels = n_mels
         self.vocab_size = vocab_size
+        self.time_mask_param = time_mask_param
+        self.freq_mask_param = freq_mask_param
+        self.num_workers = num_workers
         self.text_transform = CharTextTransform()
         self.mel_transform = torchaudio.transforms.MelSpectrogram(n_mels=self.n_mels)
         self.spectrogram_augment = nn.Sequential(
-            torchaudio.transforms.TimeMasking(time_mask_param=30),
-            torchaudio.transforms.FrequencyMasking(freq_mask_param=15)
+            torchaudio.transforms.TimeMasking(time_mask_param=self.time_mask_param),
+            torchaudio.transforms.FrequencyMasking(freq_mask_param=self.freq_mask_param)
         )
 
     def prepare_data(self):
@@ -36,22 +51,22 @@ class LibriSpeechDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-            self.train_dataset,
-            shuffle=True,
+            dataset=self.train_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn_train,
-            num_workers=4,
-            pin_memory=True
+            num_workers=self.num_workers,
+            pin_memory=True,
+            shuffle=True
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.val_dataset,
-            shuffle=True,
+            dataset=self.val_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn_val,
-            num_workers=4,
-            pin_memory=True
+            num_workers=self.num_workers,
+            pin_memory=True,
+            shuffle=True
         )
 
     def collate_fn_val(self, batch):
