@@ -20,6 +20,10 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         self.vocab_size = vocab_size
         self.text_transform = CharTextTransform()
         self.mel_transform = torchaudio.transforms.MelSpectrogram(n_mels=self.n_mels)
+        self.spectrogram_augment = nn.Sequential(
+            torchaudio.transforms.TimeMasking(time_mask_param=80),
+            torchaudio.transforms.FrequencyMasking(freq_mask_param=80)
+        )
 
     def prepare_data(self):
         os.makedirs(self.path, exist_ok=True)
@@ -60,6 +64,10 @@ class LibriSpeechDataModule(pl.LightningDataModule):
 
         for waveform, _, utterance, _, _, _ in batch:
             spec = self.mel_transform(waveform).squeeze(0).transpose(0, 1)
+            
+            if self.trainer.training:
+                spec = self.spectrogram_augment(spec)
+
             spectrograms.append(spec)
             
             label = torch.Tensor(self.text_transform.text_to_int(utterance.lower()))
