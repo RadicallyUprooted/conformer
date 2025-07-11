@@ -9,4 +9,5 @@ train:
   learning_rate: 1e-4
   accelerator: 'auto'
   precision: '16-mixed'
+  checkpoint: null
 
