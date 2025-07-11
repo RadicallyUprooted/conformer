@@ -66,7 +66,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
             collate_fn=self.collate_fn_val,
             num_workers=self.num_workers,
             pin_memory=True,
-            shuffle=True
+            shuffle=False
         )
 
     def collate_fn_val(self, batch):

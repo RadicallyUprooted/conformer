@@ -10,16 +10,17 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from torchmetrics.text import CharErrorRate, WordErrorRate
 from model.conformer import Conformer
 from data.dataset import LibriSpeechDataModule
-from text_processor.processor import CharTextTransform, GreedyCTCDecoder
+from text_processor.processor import CharTextTransform
 
 class ConformerLightningModule(pl.LightningModule):
     """
     A LightningModule that encapsulates the Conformer model, training logic,
     and optimizer configuration.
     """
-    def __init__(self, model_cfg: DictConfig, train_cfg: DictConfig, data_cfg: DictConfig):
+    def __init__(self, model_cfg: DictConfig, train_cfg: DictConfig, data_cfg: DictConfig, optimizer_cfg: DictConfig, decoder_cfg: DictConfig):
         super().__init__()
         self.save_hyperparameters()
+        self.text_transform = CharTextTransform()
         self.model = Conformer(
             vocab_size=data_cfg.vocab_size,
             n_layers=model_cfg.n_layers,
@@ -30,12 +31,12 @@ class ConformerLightningModule(pl.LightningModule):
             dropout=model_cfg.dropout,
         )
 
-        self.criterion = nn.CTCLoss(blank=data_cfg.vocab_size - 1, zero_infinity=True)
+        self.criterion = nn.CTCLoss(blank=self.text_transform.blank, zero_infinity=True)
         self.learning_rate = train_cfg.learning_rate
-        self.text_transform = CharTextTransform()
-        self.decoder = GreedyCTCDecoder(self.text_transform.index_map, blank=data_cfg.vocab_size - 1)
+        self.decoder = hydra.utils.instantiate(decoder_cfg, text_transform=self.text_transform, blank=self.text_transform.blank)
         self.cer = CharErrorRate()
         self.wer = WordErrorRate()
+        self.optimizer_cfg = optimizer_cfg
 
     def forward(self, inputs, input_lengths):
         return self.model(inputs, input_lengths)
@@ -103,7 +104,7 @@ class ConformerLightningModule(pl.LightningModule):
         self.cer.reset()
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        optimizer = hydra.utils.instantiate(self.optimizer_cfg, params=self.parameters())
         return optimizer
 
 @hydra.main(config_path="configs", config_name="config", version_base=None)
@@ -125,6 +126,8 @@ def main(cfg: DictConfig):
         model_cfg=cfg.model,
         train_cfg=cfg.train,
         data_cfg=cfg.data,
+        optimizer_cfg=cfg.optimizer,
+        decoder_cfg=cfg.decoder,
     )
 
     wandb_logger = WandbLogger(project="conformer", name="conformer-run")
