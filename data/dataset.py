@@ -38,7 +38,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=self.collate_fn_train,
             num_workers=0,
             pin_memory=True
         )
@@ -47,12 +47,44 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=self.collate_fn_val,
             num_workers=0,
             pin_memory=True
         )
 
-    def collate_fn(self, batch):
+    def collate_fn_val(self, batch):
+        """
+        A custom collate function to process the audio and text data for validation.
+        """
+        spectrograms = []
+        labels = []
+        input_lengths = []
+        label_lengths = []
+        waveforms = []
+
+        for waveform, _, utterance, _, _, _ in batch:
+            spec = self.mel_transform(waveform).squeeze(0).transpose(0, 1)
+            spectrograms.append(spec)
+            
+            label = torch.Tensor(self.text_transform.text_to_int(utterance.lower()))
+            labels.append(label)
+            
+            input_lengths.append(spec.shape[0])
+            label_lengths.append(len(label))
+            waveforms.append(waveform.squeeze(0))
+
+        padded_spectrograms = nn.utils.rnn.pad_sequence(spectrograms, batch_first=True)
+        padded_labels = nn.utils.rnn.pad_sequence(labels, batch_first=True)
+
+        return (
+            padded_spectrograms,
+            padded_labels,
+            torch.tensor(input_lengths, dtype=torch.long),
+            torch.tensor(label_lengths, dtype=torch.long),
+            waveforms
+        )
+
+    def collate_fn_train(self, batch):
         """
         A custom collate function to process the audio and text data.
         """
@@ -65,8 +97,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         for waveform, _, utterance, _, _, _ in batch:
             spec = self.mel_transform(waveform).squeeze(0).transpose(0, 1)
             
-            if self.trainer.training:
-                spec = self.spectrogram_augment(spec)
+            spec = self.spectrogram_augment(spec)
 
             spectrograms.append(spec)
             
