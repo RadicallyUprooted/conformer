@@ -24,7 +24,7 @@ class Subsampling(nn.Module):
             nn.ReLU(),
             nn.Conv2d(
                 in_channels=d_model,
-                out_channels=d_model,
+                out_channels=d_model * 2,
                 kernel_size=kernel_size,
                 stride=stride,
             ),
