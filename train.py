@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 import hydra
 import wandb
 import random
+import gc
 from omegaconf import DictConfig
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -50,7 +51,10 @@ class ConformerLightningModule(pl.LightningModule):
         loss = self.criterion(log_probs, targets, output_lengths, target_lengths)
         
         self.log('train_loss', loss, on_step=True, prog_bar=True, logger=True, sync_dist=True)
-    
+        
+        torch.cuda.empty_cache()
+        gc.collect()
+
         return loss
 
     def validation_step(self, batch, batch_idx):
