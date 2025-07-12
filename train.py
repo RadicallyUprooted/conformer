@@ -34,7 +34,7 @@ class ConformerLightningModule(pl.LightningModule):
 
         self.criterion = nn.CTCLoss(blank=self.text_transform.blank, zero_infinity=True)
         self.learning_rate = train_cfg.learning_rate
-        self.decoder = hydra.utils.instantiate(decoder_cfg, text_transform=self.text_transform, blank=self.text_transform.blank)
+        self.decoder = hydra.utils.instantiate(decoder_cfg, text_transform=self.text_transform, blank='<blank>')
         self.cer = CharErrorRate()
         self.wer = WordErrorRate()
         self.optimizer_cfg = optimizer_cfg
