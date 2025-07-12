@@ -82,8 +82,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
         for waveform, _, utterance, _, _, _ in batch:
             spec = self.mel_transform(waveform).squeeze(0).transpose(0, 1)
             spectrograms.append(spec)
-            
-            label = torch.Tensor(self.text_transform.text_to_int(utterance.lower()))
+            label = torch.Tensor(self.text_transform.text_to_int(utterance.lower().replace(" ", "|")))
             labels.append(label)
             
             input_lengths.append(spec.shape[0])
@@ -118,7 +117,7 @@ class LibriSpeechDataModule(pl.LightningDataModule):
 
             spectrograms.append(spec)
             
-            label = torch.Tensor(self.text_transform.text_to_int(utterance.lower()))
+            label = torch.Tensor(self.text_transform.text_to_int(utterance.lower().replace(" ", "|")))
             labels.append(label)
             
             input_lengths.append(spec.shape[0])
