@@ -80,3 +80,26 @@ python run.py inference.audio_path=/path/to/your/audio_directory/
 ```
 
 The script will load the model from the specified checkpoint, process the audio file(s), and print the predicted transcription(s).
+
+### Example
+
+```bash
+python run.py \
+    inference.audio_path=data/librispeech/LibriSpeech/test-clean/260/123286 \
+    train.checkpoint=checkpoints/conformer99.ckpt
+```
+
+**Output:**
+
+```text
+File: 260-123286-0000.flac
+Prediction:  saturday august fifteenth the sea and broken all round and no land in sight  
+
+File: 260-123286-0001.flac
+Prediction:  the horizon seems extremely distant  
+
+File: 260-123286-0002.flac
+Prediction:  all my danger and sufferings were needed to strike a spark of human feeling out of you but now that i am well his nature has resumed its sway
+
+...
+```
