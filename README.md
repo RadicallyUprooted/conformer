@@ -25,15 +25,20 @@ This repository contains a PyTorch Lightning implementation of the Conformer mod
 This project uses [Poetry](https://python-poetry.org/) for dependency management.
 
 1.  **Install Poetry.**
-
-2.  **Install dependencies:**
+2. (Optional) It is expected that the ```.venv``` directory is created inside the project. You can configure this behavior in Poetry using:
+   
+   ```bash
+   poetry config virtualenvs.in-project true  
+   ```
+   
+3.  **Install dependencies:**
 
     From the root of the project, run:
 
     ```bash
     poetry install
     ```
-3. **Activate virtual environment:**
+4. **Activate virtual environment:**
 
     ```bash
     source .venv/bin/activate
