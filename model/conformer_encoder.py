@@ -37,11 +37,9 @@ class Encoder(nn.Module):
         )
 
     def _get_subsample_output_dim(self, n_mels):
-        # Create a dummy input tensor to pass through the subsampling layer
         dummy_input = torch.randn(1, 100, n_mels)  # (B, L, D)
         dummy_lengths = torch.tensor([100])
         
-        # Pass the dummy input through the subsampling layer
         with torch.no_grad():
             output, _ = self.subsample(dummy_input, dummy_lengths)
         

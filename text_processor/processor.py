@@ -1,7 +1,4 @@
 class CharTextTransform:
-    """
-    A transform to convert text to a sequence of integers and back.
-    """
     def __init__(self):
         self.char_map = {
             "'": 0, 'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7,
@@ -13,7 +10,7 @@ class CharTextTransform:
         self.blank = self.char_map['<blank>']
 
     def text_to_int(self, text):
-        return [self.char_map[c] for c in text.lower()]
+        return [self.char_map[c] for c in text.lower() if c in self.char_map]
 
     def int_to_text(self, labels):
         return "".join([' ' if self.index_map[i] == '|' else self.index_map[i] for i in labels])

@@ -1,8 +1,12 @@
 import torch
 from torchaudio.models.decoder import ctc_decoder
+from torchaudio.models.decoder import download_pretrained_files
+from text_processor.processor import CharTextTransform
 
 class GreedyCTCDecoder(torch.nn.Module):
-    def __init__(self, text_transform, blank=0):
+    def __init__(self,
+                text_transform: CharTextTransform,
+                blank: str = '<blank>'):
         super().__init__()
         self.text_transform = text_transform
         self.blank = self.text_transform.char_map[blank]
@@ -18,18 +22,23 @@ class GreedyCTCDecoder(torch.nn.Module):
         return transcript
 
 class BeamSearchDecoder(torch.nn.Module):
-    def __init__(self, text_transform, blank=0, beam_size=25):
+    def __init__(self,
+                text_transform: CharTextTransform,
+                blank: str = '<blank>',
+                beam_size: int = 25):
         super().__init__()
         self.text_transform = text_transform
         self.blank = self.text_transform.char_map[blank]
         self.beam_size = beam_size
         self.vocab = [self.text_transform.index_map[i] for i in range(len(self.text_transform.index_map))]
+        self.files = download_pretrained_files("librispeech-4-gram")
         
         self.decoder = ctc_decoder(
-            lexicon=None,
+            lexicon=self.files.lexicon,
             tokens=self.vocab,
             beam_size=self.beam_size,
-            blank_token=blank
+            blank_token=blank,
+            lm=self.files.lm
         )
 
     def forward(self, emission: torch.Tensor) -> str:
