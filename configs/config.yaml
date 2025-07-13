@@ -11,5 +11,8 @@ train:
   learning_rate: 2e-5
   accelerator: 'auto'
   precision: '16-mixed'
-  checkpoint: checkpoints/conformer49.ckpt
+  checkpoint: checkpoints/conformer99.ckpt
+
+inference:
+  audio_path: null
 
