@@ -24,7 +24,7 @@ This repository contains a PyTorch Lightning implementation of the Conformer mod
 
 This project uses [Poetry](https://python-poetry.org/) for dependency management.
 
-1.  **Install Poetry:**
+1.  **Install Poetry.**
 
 2.  **Install dependencies:**
 
@@ -33,7 +33,7 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
     ```bash
     poetry install
     ```
-3. **Activate virtual environment**
+3. **Activate virtual environment:**
 
     ```bash
     source .venv/bin/activate
