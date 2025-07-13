@@ -1,0 +1,28 @@
+batch_size: 32
+n_mels: 80
+vocab_size: 29
+time_mask_param: 35
+freq_mask_param: 35
+num_workers: 8
+
+train:
+  _target_: torch.utils.data.ConcatDataset
+  datasets:
+    - _target_: data.custom_dataset.LibriSpeechCustom
+      n_mels: ${....n_mels}
+      freq_mask_param: ${....freq_mask_param}
+      time_mask_param: ${....time_mask_param}
+      split: train-clean-100
+      root: ${hydra:runtime.cwd}/data/librispeech
+    - _target_: data.custom_dataset.CommonVoiceCustom
+      n_mels: ${....n_mels}
+      freq_mask_param: ${....freq_mask_param}
+      time_mask_param: ${....time_mask_param}
+      root: ${hydra:runtime.cwd}/data/commonvoice/en
+val:
+  _target_: data.custom_dataset.LibriSpeechCustom
+  n_mels: ${..n_mels}
+  freq_mask_param: null
+  time_mask_param: null
+  split: test-other
+  root: ${hydra:runtime.cwd}/data/librispeech

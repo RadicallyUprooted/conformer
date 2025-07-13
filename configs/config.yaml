@@ -1,15 +1,15 @@
 defaults:
   - _self_
   - model: conformer
-  - data: librispeech
+  - data: custom
   - optimizer: adamw
   - decoder: beam_search
 
 train:
-  batch_size: 64
-  epochs: 50
-  learning_rate: 1e-4
+  batch_size: 32
+  epochs: 100
+  learning_rate: 2e-5
   accelerator: 'auto'
   precision: '16-mixed'
-  checkpoint: null
+  checkpoint: checkpoints/conformer49.ckpt
 

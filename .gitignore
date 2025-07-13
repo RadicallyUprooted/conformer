@@ -2,5 +2,6 @@
 __pycache__
 outputs/
 data/librispeech
+data/commonvoice
 wandb
 checkpoints
